@@ -1,0 +1,5 @@
+PyQt5>=5.15
+yt-dlp>=2024.1.0
+keyboard>=0.13.5
+python-vlc>=3.0.18
+pyinstaller>=6.21.0
