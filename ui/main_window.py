@@ -29,6 +29,8 @@ from core.hotkeys import HotkeyManager
 from core.workers import CallableWorker
 from core.yt_service import TrackInfo, extract_playlist, looks_like_url, resolve_stream, search
 from ui.search_dialog import SearchResultsDialog
+import core.db as db
+from ui.favorites_dialog import FavoritesDialog
 
 SPEED_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
 
@@ -73,8 +75,22 @@ class MainWindow(QWidget):
         self.go_button = QPushButton("Go", self)
         self.go_button.setFixedWidth(40)
         self.go_button.clicked.connect(self._on_go_clicked)
+        
+        self.fav_button = QPushButton("🤍", self)
+        self.fav_button.setFixedWidth(30)
+        self.fav_button.setToolTip("Toggle Favorite")
+        self.fav_button.clicked.connect(self._on_fav_toggled)
+        self.fav_button.setEnabled(False)
+
+        self.fav_list_button = QPushButton("⭐", self)
+        self.fav_list_button.setFixedWidth(30)
+        self.fav_list_button.setToolTip("Favorites List")
+        self.fav_list_button.clicked.connect(self._on_show_favorites)
+
         input_row.addWidget(self.input_field)
         input_row.addWidget(self.go_button)
+        input_row.addWidget(self.fav_button)
+        input_row.addWidget(self.fav_list_button)
         root.addLayout(input_row)
 
         # -- now playing title --
@@ -286,6 +302,40 @@ class MainWindow(QWidget):
         self.status_label.setText("")
         self.engine.update_resolved_track(resolved)
 
+    # -------------------------------------------------------- favorites --
+
+    def _on_fav_toggled(self) -> None:
+        track = self.engine.current_track()
+        if not track or not track.video_id:
+            return
+        
+        if db.is_favorite(track.video_id):
+            db.remove_favorite(track.video_id)
+            self.fav_button.setText("🤍")
+        else:
+            db.add_favorite(track)
+            self.fav_button.setText("❤️")
+
+    def _on_show_favorites(self) -> None:
+        dialog = FavoritesDialog(self)
+        dialog.play_selected_requested.connect(self._play_favorite_single)
+        dialog.play_all_requested.connect(self._play_favorite_all)
+        dialog.exec_()
+
+    def _play_favorite_single(self, track: TrackInfo) -> None:
+        self.engine.load_queue([track], start_index=0)
+        self._resolve_and_play(track)
+
+    def _play_favorite_all(self, tracks: list[TrackInfo]) -> None:
+        if not tracks:
+            return
+        self.engine.load_queue(tracks, start_index=0)
+        first = tracks[0]
+        if not first.is_resolved:
+            self._resolve_and_play(first)
+        else:
+            self.engine._set_media(first)
+
     # -------------------------------------------------------- worker helper --
 
     def _run_worker(self, func, on_success, *args) -> None:
@@ -324,6 +374,12 @@ class MainWindow(QWidget):
     def _on_track_changed(self, track: TrackInfo) -> None:
         self._set_elided_title(track.title)
         self.status_label.setText(track.uploader)
+        
+        self.fav_button.setEnabled(True)
+        if db.is_favorite(track.video_id):
+            self.fav_button.setText("❤️")
+        else:
+            self.fav_button.setText("🤍")
 
     def _on_position_changed(self, position_ms: int) -> None:
         if not self._seeking:
