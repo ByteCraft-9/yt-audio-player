@@ -10,6 +10,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from ui.main_window import MainWindow
+import core.db as db
 
 
 def main() -> int:
@@ -17,6 +18,7 @@ def main() -> int:
     app.setQuitOnLastWindowClosed(False)  # keep running when window is hidden to tray
 
     try:
+        db.init_db()
         window = MainWindow()
     except RuntimeError as exc:
         QMessageBox.critical(None, "YT Audio - startup error", str(exc))
