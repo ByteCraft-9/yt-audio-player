@@ -46,6 +46,8 @@ python main.py
 - **Type a search query instead** and hit **Go** — a small results list
   pops up showing only **title + channel** (no thumbnails). Double-click
   one to play it.
+- **Add to Favorites:** Click the **🤍** (Heart) button next to the Go button to save the currently playing track to your favorites (changes to **❤️**).
+- **Play Favorites:** Click the **⭐** (Star) button to open the Favorites menu, where you can reorder tracks, remove them, play a specific one, or **Play All** sequentially.
 - Playlists queue up automatically; **⏭ / ⏮** move between tracks, and it
   auto-advances when a track ends.
 
@@ -78,10 +80,12 @@ yt_audio_player/
 │   ├── yt_service.py       # yt-dlp: resolve stream / playlist / search
 │   ├── audio_engine.py     # QMediaPlayer wrapper (playback, queue, speed)
 │   ├── workers.py          # background QThread for blocking yt-dlp calls
-│   └── hotkeys.py          # global hotkey registration
+│   ├── hotkeys.py          # global hotkey registration
+│   └── db.py               # SQLite database for storing favorites
 └── ui/
     ├── main_window.py      # the compact main window
-    └── search_dialog.py    # title+channel search results popup
+    ├── search_dialog.py    # title+channel search results popup
+    └── favorites_dialog.py # Favorites list and Play All functionality
 ```
 
 ## Known limitations
